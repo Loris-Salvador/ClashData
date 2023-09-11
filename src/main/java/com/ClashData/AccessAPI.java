@@ -3,6 +3,8 @@ package com.ClashData;
 import com.ClashData.Constants.FileName;
 import com.ClashData.Exceptions.AccesAPIException;
 import com.ClashData.Exceptions.TokenException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -32,7 +34,7 @@ public class AccessAPI {
         }
     }
 
-    static String executeGetRequest(String url) throws AccesAPIException {
+    static JsonNode executeGetRequest(String url) throws AccesAPIException {
 
         try {
             URIBuilder uriBuilder = new URIBuilder(url);
@@ -55,7 +57,9 @@ public class AccessAPI {
                 throw new AccesAPIException(responseBody);
             }
 
-            return responseBody;
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            return objectMapper.readTree(responseBody);
         }
 
         catch (URISyntaxException | IOException | TokenException | AccesAPIException e)

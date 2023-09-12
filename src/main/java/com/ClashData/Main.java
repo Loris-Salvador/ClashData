@@ -1,33 +1,34 @@
 package com.ClashData;
 
 import com.ClashData.Exceptions.AccesAPIException;
-import com.ClashData.Model.Deck;
+import com.ClashData.Model.Battle;
 import com.ClashData.Model.Player;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.entity.ContentType;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
 
-import javax.sound.sampled.FloatControl;
+
 import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Properties;
 
 import com.ClashData.Constants.*;
 
 public class Main {
 
     public static void main(String[] args) {
+
+        ArrayList<Player> players = new ArrayList<>();
+
+        Player player = new Player();
+
+        player.setTag("#2RC2C9Q2");
+
+        players.add(player);
+
+        addPlayersBattle(players);
+
+
+
 
 
     }
@@ -74,12 +75,47 @@ public class Main {
         }
     }
 
+    private static void createCardsIDProperties()
+    {
+        String url = ClashRoyaleAPIURL.CARDS_URL;
+
+        Properties prop = new Properties();
+
+        try {
+            JsonNode responseNode = AccessAPI.executeGetRequest(url);
+
+            JsonNode itemNode = responseNode.get("items");
+
+            int i = 1;
+
+            for(JsonNode node : itemNode)
+            {
+                prop.setProperty(node.get("name").asText(), String.valueOf(i));
+                i++;
+            }
+
+            try (OutputStream output = new FileOutputStream(FileName.CARDS_ID_PROPERTIES)) {
+                // Sauvegardez les propriétés dans un fichier
+                prop.store(output, "Fichier de configuration");
+                System.out.println("Fichier de configuration créé avec succès.");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+        catch(AccesAPIException e)
+        {
+            System.out.println(e.getMessage());
+        }
+
+    }
+
 
     /*
      Get the current top 1000 in
      Path of Legend Ranking
      */
-    static ArrayList<Player> getTop1000() {
+    private static ArrayList<Player> getTop1000() {
 
         ArrayList<Player> top1000List = new ArrayList<>();
 
@@ -123,6 +159,46 @@ public class Main {
         }
 
         return top1000List;
+
+    }
+
+
+    private static void addPlayersBattle(ArrayList<Player> players) {
+
+        int top = 1;
+
+        for(Player player : players)
+        {
+            try {
+
+                String url = "https://api.clashroyale.com/v1/players/" + player.getTagForCRAPI() + "/battlelog";
+
+                JsonNode responseNode = AccessAPI.executeGetRequest(url);
+
+                for(JsonNode node : responseNode)
+                {
+                    if(!node.get("type").asText().equals("pathOfLegend"))
+                        continue;
+
+                    Battle battle = new Battle(node, top);
+
+                    System.out.println(battle.toString() + "\n\n\n");
+
+
+                    //add battlesdeck to DB
+
+
+                }
+            }
+            catch (AccesAPIException e)
+            {
+                System.out.println(e.getMessage());
+            }
+
+            top++;
+
+
+        }
 
     }
 

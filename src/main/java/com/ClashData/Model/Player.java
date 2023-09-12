@@ -1,6 +1,6 @@
 package com.ClashData.Model;
 
-public class Player implements Comparable<Player> {
+public class Player {
     private int ELO;
     private String tag;
 
@@ -31,9 +31,15 @@ public class Player implements Comparable<Player> {
         this.tag = tag;
     }
 
-    @Override
-    public int compareTo(Player other) {
-        return Integer.compare(this.ELO, other.ELO);
+
+    public String getTagForCRAPI()
+    {
+        char firstChar = tag.charAt(0);
+        String restOfString = tag.substring(1);
+        return "%23" + restOfString;
     }
+
+
+
 
 }

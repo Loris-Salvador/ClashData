@@ -6,16 +6,16 @@ import java.util.Collections;
 public class Deck {
 
     //ID is equal to the CONCATENATION of the differents Card's ID
-    private int id;
+    private String id;
     private ArrayList<Integer> cardsId = new ArrayList<>(8);
-    private int evoIndex;
+    private int evoCardID;
 
     public Deck()
     {
-        evoIndex = -1;
+        evoCardID = -1;
     }
 
-    public int getId(){
+    public String getId(){
         return id;
     }
 
@@ -31,26 +31,34 @@ public class Deck {
 
     }
 
-    public int getEvoIndex() {
-        return evoIndex;
+    public int getEvoCardID() {
+        return evoCardID;
     }
 
-    public void setEvoIndex(int evoIndex) {
-        this.evoIndex = evoIndex;
+    public void setEvoCardID(int evoIndex) {
+        this.evoCardID = evoIndex;
     }
 
 
     private void updateId()
     {
-        id = 0;
+        StringBuilder builder = new StringBuilder();
 
-        for(int i : cardsId)
-        {
-            id = id + i;
+        for (Integer card : cardsId) {
+            builder.append(card);
         }
+
+        id = builder.toString();
     }
 
-
+    @Override
+    public String toString() {
+        return "Deck{" +
+                "id='" + id + '\'' +
+                ", cardsId=" + cardsId +
+                ", evoCardID=" + evoCardID +
+                '}';
+    }
 
     //TESTS
     public static void main(String[] args) {
@@ -59,6 +67,7 @@ public class Deck {
 
         deck.addCardsId(5);
         deck.addCardsId(3);
+        deck.addCardsId(4);
 
         System.out.println(deck.getCardsId());
         System.out.println(deck.getId());

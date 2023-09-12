@@ -1,71 +1,128 @@
 package com.ClashData.Model;
 
+import com.ClashData.Constants.FileName;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import java.util.Date;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 public class Battle {
 
-    private Deck homeDeck;
-    private Deck awayDeck;
-    private String homePlayerTag;
-    private String awayPlayerTag;
+    private String id;
+    private Deck deckPlayer2;
+    private Deck deckPlayer1;
+    private String tagPlayer1;
+    private String tagPlayer2;
     private boolean isWin;
-    private Date date;
+    private String date;
     private Mode mode;
+    private int top;
 
-    public Battle(JsonNode jsonNode)
-    {
-        System.out.println("Constructor");
+
+    @Override
+    public String toString() {
+        return "Battle{" +
+                "id='" + id + '\'' +
+                ", deckPlayer2=" + deckPlayer2 +
+                ", deckPlayer1=" + deckPlayer1 +
+                ", tagPlayer1='" + tagPlayer1 + '\'' +
+                ", tagPlayer2='" + tagPlayer2 + '\'' +
+                ", isWin=" + isWin +
+                ", date='" + date + '\'' +
+                ", mode=" + mode +
+                '}';
     }
 
-    public Deck getHomeDeck() {
-        return homeDeck;
+    public Battle(JsonNode node, int top) {
+
+        this.mode = Mode.PATH_OF_LEGEND;
+        this.date = node.get("battleTime").asText();
+        this.top = top;
+
+        JsonNode teamNode = node.get("team").get(0);
+        this.tagPlayer1 = teamNode.get("tag").asText();
+
+        JsonNode oppoNode = node.get("opponent").get(0);
+        this.tagPlayer2 = oppoNode.get("tag").asText();
+
+        if(teamNode.get("crowns").asInt() > oppoNode.get("crowns").asInt())
+            this.isWin = true;
+        else
+            this.isWin = false;
+
+
+        Properties prop = new Properties();
+
+        try (InputStream input = new FileInputStream(FileName.CARDS_ID_PROPERTIES)) {
+            // Chargez le fichier .properties
+            prop.load(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        //DECKS
+        deckPlayer1 = new Deck();
+        deckPlayer2 = new Deck();
+
+        //TEAM
+        JsonNode firstCardTeam = teamNode.get("cards").get(0);
+        if(firstCardTeam.get("evolutionLevel") != null)
+        {
+            String evoCardName = firstCardTeam.get("name").asText();
+            String id = (String) prop.get(evoCardName);
+            deckPlayer1.setEvoCardID(Integer.parseInt(id));
+        }
+
+
+        JsonNode cardTeamNode = teamNode.get("cards");
+
+        for(JsonNode n : cardTeamNode)
+        {
+            String cardName = n.get("name").asText();
+            int id = Integer.parseInt(prop.getProperty(cardName));
+
+            deckPlayer1.addCardsId(id);
+        }
+
+
+        //OPPONENT
+
+        JsonNode firstCardOppo = oppoNode.get("cards").get(0);
+
+        if(firstCardOppo.get("evolutionLevel") != null)
+        {
+            String evoCardName = firstCardOppo.get("name").asText();
+            String id = (String) prop.get(evoCardName);
+
+            deckPlayer2.setEvoCardID(Integer.parseInt(id));
+        }
+
+        JsonNode cardOppoNode = oppoNode.get("cards");
+
+        for(JsonNode n : cardOppoNode)
+        {
+            String cardName = n.get("name").asText();
+            int id = Integer.parseInt(prop.getProperty(cardName));
+
+            deckPlayer2.addCardsId(id);
+        }
+
+        /////////ID///////////
+
+        if(tagPlayer1.compareTo(tagPlayer2) < 0)
+        {
+            id = tagPlayer1 + tagPlayer2 + date;
+        }
+        else
+        {
+            id = tagPlayer2 + tagPlayer1 + date;
+        }
+
     }
 
-    public void setHomeDeck(Deck homeDeck) {
-        this.homeDeck = homeDeck;
-    }
 
-    public Deck getAwayDeck() {
-        return awayDeck;
-    }
-
-    public void setAwayDeck(Deck awayDeck) {
-        this.awayDeck = awayDeck;
-    }
-
-    public String getHomePlayerTag() {
-        return homePlayerTag;
-    }
-
-    public void setHomePlayerTag(String homePlayerTag) {
-        this.homePlayerTag = homePlayerTag;
-    }
-
-    public String getAwayPlayerTag() {
-        return awayPlayerTag;
-    }
-
-    public void setAwayPlayerTag(String awayPlayerTag) {
-        this.awayPlayerTag = awayPlayerTag;
-    }
-
-    public Date getDate() {
-        return date;
-    }
-
-    public void setDate(Date date) {
-        this.date = date;
-    }
-
-    public Mode getMode() {
-        return mode;
-    }
-
-    public void setMode(Mode mode) {
-        this.mode = mode;
-    }
 
     public static void main(String[] args) {
 

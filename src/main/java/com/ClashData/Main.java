@@ -165,7 +165,6 @@ public class Main {
 
     private static void addPlayersBattle(ArrayList<Player> players) {
 
-        int top = 1;
 
         for(Player player : players)
         {
@@ -180,10 +179,9 @@ public class Main {
                     if(!node.get("type").asText().equals("pathOfLegend"))
                         continue;
 
-                    Battle battle = new Battle(node, top);
+                    Battle battle = new Battle(node);
 
                     System.out.println(battle.toString() + "\n\n\n");
-
 
                     //add battlesdeck to DB
 
@@ -195,7 +193,6 @@ public class Main {
                 System.out.println(e.getMessage());
             }
 
-            top++;
 
 
         }

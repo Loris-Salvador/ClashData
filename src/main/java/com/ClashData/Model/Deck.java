@@ -46,6 +46,7 @@ public class Deck {
 
         for (Integer card : cardsId) {
             builder.append(card);
+            builder.append("_");
         }
 
         id = builder.toString();

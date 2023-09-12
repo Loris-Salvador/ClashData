@@ -11,31 +11,20 @@ import java.util.Properties;
 public class Battle {
 
     private String id;
-    private Deck deckPlayer2;
-    private Deck deckPlayer1;
     private String tagPlayer1;
+    private Deck deckPlayer1;
     private String tagPlayer2;
+    private Deck deckPlayer2;
+    //isWin depend du deck1 si le joueur 1 win alors win = true
     private boolean isWin;
     private String date;
     private Mode mode;
     private int top;
 
 
-    @Override
-    public String toString() {
-        return "Battle{" +
-                "id='" + id + '\'' +
-                ", deckPlayer2=" + deckPlayer2 +
-                ", deckPlayer1=" + deckPlayer1 +
-                ", tagPlayer1='" + tagPlayer1 + '\'' +
-                ", tagPlayer2='" + tagPlayer2 + '\'' +
-                ", isWin=" + isWin +
-                ", date='" + date + '\'' +
-                ", mode=" + mode +
-                '}';
-    }
 
-    public Battle(JsonNode node, int top) {
+
+    public Battle(JsonNode node) {
 
         this.mode = Mode.PATH_OF_LEGEND;
         this.date = node.get("battleTime").asText();
@@ -109,6 +98,35 @@ public class Battle {
             deckPlayer2.addCardsId(id);
         }
 
+        //////TOP/////////
+        String topTeam = teamNode.get("globalRank").asText();
+        String oppoTeam = oppoNode.get("globalRank").asText();
+
+        int a, b ;
+
+        if(topTeam.equals("null"))
+            a = -1;
+        else
+            a = Integer.parseInt(topTeam);
+
+        if(oppoTeam.equals("null"))
+            b = -1;
+        else
+            b = Integer.parseInt(oppoTeam);
+
+
+        if(a == -1 && b == -1)
+            top = -1;
+        else
+        {
+            if(a > b)
+                this.top = a;
+            else
+                this.top = b;
+        }
+
+
+
         /////////ID///////////
 
         if(tagPlayer1.compareTo(tagPlayer2) < 0)
@@ -122,6 +140,21 @@ public class Battle {
 
     }
 
+
+    @Override
+    public String toString() {
+        return "Battle{" +
+                "id='" + id + '\'' +
+                ", deckPlayer2=" + deckPlayer2 +
+                ", deckPlayer1=" + deckPlayer1 +
+                ", tagPlayer1='" + tagPlayer1 + '\'' +
+                ", tagPlayer2='" + tagPlayer2 + '\'' +
+                ", isWin=" + isWin +
+                ", date='" + date + '\'' +
+                ", mode=" + mode +
+                ", top=" + top +
+                '}';
+    }
 
 
     public static void main(String[] args) {

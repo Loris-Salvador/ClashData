@@ -6,7 +6,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Properties;
+import java.util.TimeZone;
 
 public class Battle {
 
@@ -17,7 +21,7 @@ public class Battle {
     private Deck deckPlayer2;
     //isWin depend du deck1 si le joueur 1 win alors win = true
     private boolean isWin;
-    private String date;
+    private Date date;
     private Mode mode;
     private int top;
 
@@ -27,8 +31,24 @@ public class Battle {
     public Battle(JsonNode node) {
 
         this.mode = Mode.PATH_OF_LEGEND;
-        this.date = node.get("battleTime").asText();
-        this.top = top;
+        String battleTime = node.get("battleTime").asText();
+
+        // Utilisez un SimpleDateFormat pour analyser la chaîne
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'");
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+        try {
+            Date date = sdf.parse(battleTime);
+
+            // Affichez la date résultante
+            this.date = date;
+
+
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+
 
         JsonNode teamNode = node.get("team").get(0);
         this.tagPlayer1 = teamNode.get("tag").asText();
@@ -131,15 +151,51 @@ public class Battle {
 
         if(tagPlayer1.compareTo(tagPlayer2) < 0)
         {
-            id = tagPlayer1 + tagPlayer2 + date;
+            id = tagPlayer1 + tagPlayer2 + date.toString();
         }
         else
         {
-            id = tagPlayer2 + tagPlayer1 + date;
+            id = tagPlayer2 + tagPlayer1 + date.toString();
         }
 
     }
 
+
+    public Deck getDeckPlayer1() {
+        return deckPlayer1;
+    }
+
+    public Deck getDeckPlayer2() {
+        return deckPlayer2;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getTagPlayer1() {
+        return tagPlayer1;
+    }
+
+    public String getTagPlayer2() {
+        return tagPlayer2;
+    }
+
+    public boolean isWin() {
+        return isWin;
+    }
+
+    public Date getDate() {
+        return date;
+    }
+
+    public Mode getMode() {
+        return mode;
+    }
+
+    public int getTop() {
+        return top;
+    }
 
     @Override
     public String toString() {
@@ -155,6 +211,8 @@ public class Battle {
                 ", top=" + top +
                 '}';
     }
+
+
 
 
     public static void main(String[] args) {

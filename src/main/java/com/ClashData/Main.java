@@ -2,14 +2,19 @@ package com.ClashData;
 
 import com.ClashData.Exceptions.AccesAPIException;
 import com.ClashData.Model.Battle;
+import com.ClashData.Model.Deck;
 import com.ClashData.Model.Player;
 import com.fasterxml.jackson.databind.JsonNode;
 
 
 import java.io.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Properties;
+import java.util.Set;
 
 import com.ClashData.Constants.*;
 
@@ -26,10 +31,6 @@ public class Main {
         players.add(player);
 
         addPlayersBattle(players);
-
-
-
-
 
     }
 
@@ -181,9 +182,13 @@ public class Main {
 
                     Battle battle = new Battle(node);
 
-                    System.out.println(battle.toString() + "\n\n\n");
+                    //System.out.println(battle.toString() + "\n\n\n");
 
                     //add battlesdeck to DB
+                    addDeckToDB(battle.getDeckPlayer1());
+                    addDeckToDB(battle.getDeckPlayer2());
+
+                    addBattleToDB(battle);
 
 
                 }
@@ -197,6 +202,146 @@ public class Main {
 
         }
 
+    }
+
+    private static void addCardsToDB()
+    {
+        Properties prop = new Properties();
+
+        try (InputStream input = new FileInputStream(FileName.CARDS_ID_PROPERTIES)) {
+            // Chargez le fichier .properties
+            prop.load(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        String jdbcUrl = "jdbc:oracle:thin:@//192.168.203.140:1521/orcl"; // Remplacez avec votre URL de connexion Oracle
+        String username = "ClashStats";
+        String password = "ClashStats";
+
+
+        try {
+            Connection connection = DriverManager.getConnection(jdbcUrl, username, password);
+
+            String query = "INSERT INTO CARD (CARD_ID, CARD_NAME) VALUES (?, ?)";
+
+            Set<String> keys = prop.stringPropertyNames();
+
+            // Parcourez les clés et récupérez les valeurs correspondantes
+            for (String key : keys) {
+                String value = prop.getProperty(key);
+
+                System.out.println("Key : " + key);
+                System.out.println("Value : " + value);
+
+
+                PreparedStatement preparedStatement = connection.prepareStatement(query);
+                preparedStatement.setInt(1, Integer.parseInt(value));
+                preparedStatement.setString(2, key);
+
+                preparedStatement.executeUpdate();
+
+                preparedStatement.close();
+            }
+
+            connection.close();
+
+
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+    }
+
+
+    private static void addDeckToDB(Deck deck)
+    {
+        String jdbcUrl = "jdbc:oracle:thin:@//192.168.203.140:1521/orcl"; // Remplacez avec votre URL de connexion Oracle
+        String username = "ClashStats";
+        String password = "ClashStats";
+
+
+        try {
+            Connection connection = DriverManager.getConnection(jdbcUrl, username, password);
+
+            String query = "INSERT INTO DECK (DECK_ID, CARTE_1, CARTE_2, CARTE_3, CARTE_4, CARTE_5, CARTE_6, CARTE_7, CARTE_8, CARD_EVO_ID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, deck.getId());
+            for(int i = 2; i < 10; i++)
+                preparedStatement.setInt(i, deck.getCardsId().get(i-2));
+            preparedStatement.setInt(10, deck.getEvoCardID());
+
+            preparedStatement.executeUpdate();
+
+            preparedStatement.close();
+
+
+            connection.close();
+
+
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+
+        }
+
+
+    }
+
+
+    private static void addBattleToDB(Battle battle)
+    {
+        System.out.println("wesh");
+        String jdbcUrl = "jdbc:oracle:thin:@//192.168.203.140:1521/orcl"; // Remplacez avec votre URL de connexion Oracle
+        String username = "ClashStats";
+        String password = "ClashStats";
+
+        try {
+            Connection connection = DriverManager.getConnection(jdbcUrl, username, password);
+
+            String query = "INSERT INTO BATTLE (BATTLE_ID, TAG_PLAYER_1, DECK_ID_PLAYER_1, TAG_PLAYER_2, DECK_ID_PLAYER_2, IS_WIN, BATTLE_TIME, BATTLE_MODE, TOP) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, battle.getId());
+            preparedStatement.setString(2, battle.getTagPlayer1());
+            preparedStatement.setString(3, battle.getDeckPlayer1().getId());
+            preparedStatement.setString(4, battle.getTagPlayer2());
+            preparedStatement.setString(5, battle.getDeckPlayer2().getId());
+            if(battle.isWin())
+                preparedStatement.setInt(6, 1);
+            else
+                preparedStatement.setInt(6, 0);
+
+            java.sql.Date dateSql = new java.sql.Date(battle.getDate().getTime());
+
+            preparedStatement.setDate(7, dateSql);
+
+            //for now pathOfLegend
+            preparedStatement.setString(8, "pathOfLegend");
+
+            preparedStatement.setInt(9,battle.getTop());
+
+
+            preparedStatement.executeUpdate();
+
+            preparedStatement.close();
+
+
+            connection.close();
+
+
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 
 

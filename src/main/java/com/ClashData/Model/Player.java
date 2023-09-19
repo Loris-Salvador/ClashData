@@ -1,6 +1,8 @@
 package com.ClashData.Model;
 
-public class Player {
+import java.io.Serializable;
+
+public class Player implements Serializable {
     private int ELO;
     private String tag;
 

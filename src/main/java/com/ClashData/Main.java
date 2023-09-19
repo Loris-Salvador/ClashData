@@ -8,9 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 
 import java.io.*;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Properties;
@@ -18,17 +16,13 @@ import java.util.Set;
 
 import com.ClashData.Constants.*;
 
+import javax.swing.*;
+
 public class Main {
 
     public static void main(String[] args) {
 
-        ArrayList<Player> players = new ArrayList<>();
-
-        Player player = new Player();
-
-        player.setTag("#2RC2C9Q2");
-
-        players.add(player);
+        ArrayList<Player> players = getTop1000();
 
         addPlayersBattle(players);
 
@@ -167,6 +161,7 @@ public class Main {
     private static void addPlayersBattle(ArrayList<Player> players) {
 
 
+        int i = 0;
         for(Player player : players)
         {
             try {
@@ -191,6 +186,7 @@ public class Main {
                     addBattleToDB(battle);
 
 
+
                 }
             }
             catch (AccesAPIException e)
@@ -198,6 +194,9 @@ public class Main {
                 System.out.println(e.getMessage());
             }
 
+            System.out.println("\n\nBattles of player " + i + " added to DataBase\n\n\n");
+
+            i++;
 
 
         }
@@ -264,85 +263,114 @@ public class Main {
         String password = "ClashStats";
 
 
-        try {
-            Connection connection = DriverManager.getConnection(jdbcUrl, username, password);
-
-            String query = "INSERT INTO DECK (DECK_ID, CARTE_1, CARTE_2, CARTE_3, CARTE_4, CARTE_5, CARTE_6, CARTE_7, CARTE_8, CARD_EVO_ID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password)) {
+            connection.setAutoCommit(false); // Désactive le mode "auto-commit"
 
 
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, deck.getId());
-            for(int i = 2; i < 10; i++)
-                preparedStatement.setInt(i, deck.getCardsId().get(i-2));
-            preparedStatement.setInt(10, deck.getEvoCardID());
-
-            preparedStatement.executeUpdate();
-
-            preparedStatement.close();
 
 
-            connection.close();
+            String query = "SELECT * FROM DECK WHERE DECK_ID LIKE '" + deck.getId() + "'";
 
+            Statement statement = connection.createStatement();
 
-        }
-        catch (Exception e)
-        {
+            ResultSet resultSet = statement.executeQuery(query);
+
+            if (resultSet.next()) {
+
+                System.out.println("Deck already exists");
+                resultSet.close();
+                statement.close();
+                return;
+            }
+
+            resultSet.close();
+            statement.close();
+
+            query = "INSERT INTO DECK (DECK_ID, CARTE_1, CARTE_2, CARTE_3, CARTE_4, CARTE_5, CARTE_6, CARTE_7, CARTE_8, CARD_EVO_ID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                preparedStatement.setString(1, deck.getId());
+                for (int i = 2; i < 10; i++) {
+                    preparedStatement.setInt(i, deck.getCardsId().get(i - 2));
+                }
+                preparedStatement.setInt(10, deck.getEvoCardID());
+
+                preparedStatement.executeUpdate();
+
+                connection.commit(); // Valide la transaction
+            } catch (SQLException e) {
+                e.printStackTrace();
+                connection.rollback(); // Annule la transaction en cas d'erreur
+            }
+        } catch (SQLException e) {
             e.printStackTrace();
-
         }
+
 
 
     }
 
 
-    private static void addBattleToDB(Battle battle)
-    {
-        System.out.println("wesh");
-        String jdbcUrl = "jdbc:oracle:thin:@//192.168.203.140:1521/orcl"; // Remplacez avec votre URL de connexion Oracle
+    private static void addBattleToDB(Battle battle) {
+        String jdbcUrl = "jdbc:oracle:thin:@//192.168.203.140:1521/orcl";
         String username = "ClashStats";
         String password = "ClashStats";
 
-        try {
-            Connection connection = DriverManager.getConnection(jdbcUrl, username, password);
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password)) {
+            connection.setAutoCommit(false); // Désactive le mode "auto-commit"
 
-            String query = "INSERT INTO BATTLE (BATTLE_ID, TAG_PLAYER_1, DECK_ID_PLAYER_1, TAG_PLAYER_2, DECK_ID_PLAYER_2, IS_WIN, BATTLE_TIME, BATTLE_MODE, TOP) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String query = "SELECT * FROM BATTLE WHERE BATTLE_ID LIKE '" + battle.getId() + "'";
 
+            Statement statement = connection.createStatement();
 
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, battle.getId());
-            preparedStatement.setString(2, battle.getTagPlayer1());
-            preparedStatement.setString(3, battle.getDeckPlayer1().getId());
-            preparedStatement.setString(4, battle.getTagPlayer2());
-            preparedStatement.setString(5, battle.getDeckPlayer2().getId());
-            if(battle.isWin())
-                preparedStatement.setInt(6, 1);
-            else
-                preparedStatement.setInt(6, 0);
+            ResultSet resultSet = statement.executeQuery(query);
 
-            java.sql.Date dateSql = new java.sql.Date(battle.getDate().getTime());
+            if (resultSet.next()) {
 
-            preparedStatement.setDate(7, dateSql);
+                System.out.println("Battle already exists");
+                resultSet.close();
+                statement.close();
+                return;
+            }
 
-            //for now pathOfLegend
-            preparedStatement.setString(8, "pathOfLegend");
-
-            preparedStatement.setInt(9,battle.getTop());
+            resultSet.close();
+            statement.close();
 
 
-            preparedStatement.executeUpdate();
+            query = "INSERT INTO BATTLE (BATTLE_ID, TAG_PLAYER_1, DECK_ID_PLAYER_1, TAG_PLAYER_2, DECK_ID_PLAYER_2, IS_WIN, BATTLE_TIME, BATTLE_MODE, TOP) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-            preparedStatement.close();
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                preparedStatement.setString(1, battle.getId());
+                preparedStatement.setString(2, battle.getTagPlayer1());
+                preparedStatement.setString(3, battle.getDeckPlayer1().getId());
+                preparedStatement.setString(4, battle.getTagPlayer2());
+                preparedStatement.setString(5, battle.getDeckPlayer2().getId());
 
+                if (battle.isWin()) {
+                    preparedStatement.setInt(6, 1);
+                } else {
+                    preparedStatement.setInt(6, 0);
+                }
 
-            connection.close();
+                java.sql.Date dateSql = new java.sql.Date(battle.getDate().getTime());
+                preparedStatement.setDate(7, dateSql);
 
+                // for now pathOfLegend
+                preparedStatement.setString(8, "pathOfLegend");
 
-        }
-        catch (Exception e)
-        {
+                preparedStatement.setInt(9, battle.getTop());
+
+                preparedStatement.executeUpdate();
+                connection.commit(); // Valide la transaction
+            } catch (SQLException e) {
+                e.printStackTrace();
+                connection.rollback(); // Annule la transaction en cas d'erreur
+            }
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
+
 
 
 }
